@@ -1,0 +1,10 @@
+*,
+::after,
+::before {
+  position: relative;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
