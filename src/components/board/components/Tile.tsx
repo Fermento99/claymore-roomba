@@ -25,21 +25,44 @@ export const Tile = ({ state, click, ended }: TileProps) => {
     }
   }
   return (
-    <TileContainer open={state.open} onClick={(e) => click(e.altKey)}>
+    <TileContainer state={state} onClick={(e) => click(e.ctrlKey)}>
       {content}
     </TileContainer>
   );
 };
 
-const TileContainer = styled.div<{ open: boolean }>`
+const TileContainer = styled.div<{ state: TileState }>`
   display: flex;
   align-items: center;
   justify-content: center;
   height: 1.5rem;
   width: 1.5rem;
-  background-color: #888;
-  border-color: #000;
-  border-width: 2px;
-  border-style: ${({ open }) => (open ? 'inset' : 'outset')};
-  cursor: ${({ open }) => (open ? 'default' : 'pointer')};
+  background-color: ${({ state }) => (state.open ? '#bdbdbd' : '#c0c0c0')};
+  border-color: ${({ state }) => (state.open ? '#888' : '#ddd')};
+  border-width: ${({ state }) => (state.open ? '1px' : '3px')};
+  border-style: ${({ state }) => (state.open ? 'solid' : 'outset')};
+  cursor: ${({ state }) => (state.open ? 'default' : 'pointer')};
+  color: ${({ state }) => {
+    if (state.flagged || state.bomb) return '#f11013';
+    switch (state.proximity) {
+      case 1:
+        return '#14538c';
+      case 2:
+        return '#158f8c';
+      case 3:
+        return '#18a97d';
+      case 4:
+        return '#62b91f';
+      case 5:
+        return '#f8b81f';
+      case 6:
+        return '#f68c0b';
+      case 7:
+        return '#ef5f11';
+      case 8:
+        return '#f8181c';
+      default:
+        return '#000';
+    }
+  }};
 `;

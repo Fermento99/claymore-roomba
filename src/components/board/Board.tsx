@@ -4,15 +4,19 @@ import { Tile } from './components/Tile';
 import { TileState } from '../../models/TileState';
 import { randNoRep } from '../../utils/random';
 import { getNeighbours } from '../../utils/neighbours';
+import { GameConfig } from '../../models/GameConfig';
+import { GameStatus } from '../../models/GameStatus';
 
 interface BoardProps {
-  width: number;
-  height: number;
-  bombs: number;
+  gameConfig: GameConfig;
+  finishedCallback: (result: GameStatus) => void;
 }
 
-export const Board = ({ width, height, bombs }: BoardProps) => {
-  const [ended, end] = useState(0);
+export const Board = ({
+  gameConfig: { width, height, bombs },
+  finishedCallback,
+}: BoardProps) => {
+  const [ended, setEnded] = useState(false);
   const [firstMoveMade, makeFirstMoveMade] = useState(false);
   const [boardState, setBoardState] = useState<TileState[][]>(
     Array(height)
@@ -29,7 +33,7 @@ export const Board = ({ width, height, bombs }: BoardProps) => {
       <Row key={y}>
         {row.map((state, x) => (
           <Tile
-            ended={ended !== 0}
+            ended={ended}
             state={state}
             click={callback(x, y)}
             key={x + '-' + y}
@@ -39,11 +43,45 @@ export const Board = ({ width, height, bombs }: BoardProps) => {
     ));
   };
 
-  const openTile = (x: number, y: number, board: TileState[][]) => {
-    board[y][x].setOpen();
-    if (board[y][x].proximity === 0) {
+  const checkLost = (x: number, y: number): boolean => {
+    if (boardState[y][x].bomb) {
+      setEnded(true);
+      finishedCallback(GameStatus.LOST);
+      return true;
+    }
+
+    return false;
+  };
+  const checkWon = () => {
+    const { flaggedBombs, closed } = boardState.reduce(
+      (acc, row) => {
+        const { flaggedBombs, closed } = row.reduce(
+          (acc, tile) => ({
+            flaggedBombs:
+              acc.flaggedBombs + (tile.flagged && tile.bomb ? 1 : 0),
+            closed: acc.closed + (!tile.open ? 1 : 0),
+          }),
+          { flaggedBombs: 0, closed: 0 }
+        );
+        return {
+          flaggedBombs: acc.flaggedBombs + flaggedBombs,
+          closed: acc.closed + closed,
+        };
+      },
+      { flaggedBombs: 0, closed: 0 }
+    );
+    console.log(flaggedBombs, closed, bombs);
+    if (flaggedBombs === bombs || closed === bombs) {
+      setEnded(true);
+      finishedCallback(GameStatus.WON);
+    }
+  };
+
+  const openTile = (x: number, y: number) => {
+    boardState[y][x].setOpen();
+    if (boardState[y][x].proximity === 0) {
       getNeighbours(x, y, height, width).forEach(([y, x]) => {
-        if (!board[y][x].open) openTile(x, y, board);
+        if (!boardState[y][x].open) openTile(x, y);
       });
     }
   };
@@ -51,13 +89,15 @@ export const Board = ({ width, height, bombs }: BoardProps) => {
   const callback = (x: number, y: number) =>
     firstMoveMade
       ? (alt: boolean) => {
-          alt
-            ? boardState[y][x].toggleFlag()
-            : boardState[y][x].bomb
-            ? end(-1)
-            : openTile(x, y, boardState);
+          if (alt) boardState[y][x].toggleFlag();
+          else {
+            if (!checkLost(x, y)) openTile(x, y);
+          }
+          checkWon();
           setBoardState([...boardState]);
         }
+      : ended
+      ? () => {}
       : () => {
           makeFirstMoveMade(true);
           const bombLocations = randNoRep(0, height * width, bombs, [
@@ -69,7 +109,7 @@ export const Board = ({ width, height, bombs }: BoardProps) => {
               ([y, x]) => boardState[y][x].proximity++
             );
           });
-          openTile(x, y, boardState);
+          openTile(x, y);
           setBoardState([...boardState]);
         };
 
@@ -86,4 +126,6 @@ const BoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  border: 3px inset #888;
+  width: min-content;
 `;
