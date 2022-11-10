@@ -6,6 +6,7 @@ import { randNoRep } from '../../utils/random';
 import { getNeighbours } from '../../utils/neighbours';
 import { GameConfig } from '../../models/GameConfig';
 import { GameStatus } from '../../models/GameStatus';
+import { checkLost, checkWon, openTile } from '../../utils/base-mechanics';
 
 interface BoardProps {
   gameConfig: GameConfig;
@@ -43,62 +44,29 @@ export const Board = ({
     ));
   };
 
-  const checkLost = (x: number, y: number): boolean => {
-    if (boardState[y][x].bomb) {
-      setEnded(true);
-      finishedCallback(GameStatus.LOST);
-      return true;
-    }
-
-    return false;
-  };
-  const checkWon = () => {
-    const { flaggedBombs, closed } = boardState.reduce(
-      (acc, row) => {
-        const { flaggedBombs, closed } = row.reduce(
-          (acc, tile) => ({
-            flaggedBombs:
-              acc.flaggedBombs + (tile.flagged && tile.bomb ? 1 : 0),
-            closed: acc.closed + (!tile.open ? 1 : 0),
-          }),
-          { flaggedBombs: 0, closed: 0 }
-        );
-        return {
-          flaggedBombs: acc.flaggedBombs + flaggedBombs,
-          closed: acc.closed + closed,
-        };
-      },
-      { flaggedBombs: 0, closed: 0 }
-    );
-    console.log(flaggedBombs, closed, bombs);
-    if (flaggedBombs === bombs || closed === bombs) {
-      setEnded(true);
-      finishedCallback(GameStatus.WON);
-    }
-  };
-
-  const openTile = (x: number, y: number) => {
-    boardState[y][x].setOpen();
-    if (boardState[y][x].proximity === 0) {
-      getNeighbours(x, y, height, width).forEach(([y, x]) => {
-        if (!boardState[y][x].open) openTile(x, y);
-      });
-    }
-  };
-
   const callback = (x: number, y: number) =>
     firstMoveMade
       ? (alt: boolean) => {
-          if (alt) boardState[y][x].toggleFlag();
+          let board = boardState;
+          if (alt) board[y][x].toggleFlag();
           else {
-            if (!checkLost(x, y)) openTile(x, y);
+            if (checkLost({ x, y }, boardState)) {
+              setEnded(true);
+              finishedCallback(GameStatus.LOST);
+            } else {
+              board = openTile({ x, y }, { board, height, width });
+            }
           }
-          checkWon();
-          setBoardState([...boardState]);
+          if (checkWon({ board, bombs })) {
+            setEnded(true);
+            finishedCallback(GameStatus.WON);
+          }
+          setBoardState([...board]);
         }
       : ended
       ? () => {}
       : () => {
+          //TODO: refactor
           makeFirstMoveMade(true);
           const bombLocations = randNoRep(0, height * width, bombs, [
             y * width + x,
@@ -109,7 +77,7 @@ export const Board = ({
               ([y, x]) => boardState[y][x].proximity++
             );
           });
-          openTile(x, y);
+          openTile({ x, y }, { board: boardState, height, width });
           setBoardState([...boardState]);
         };
 
