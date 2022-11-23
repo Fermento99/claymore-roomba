@@ -2,6 +2,8 @@ import { Board, Menu } from './components';
 import { useState } from 'react';
 import { GameStatus } from './models/GameStatus';
 import { GameConfig } from './models/GameConfig';
+import styled from '@emotion/styled';
+import { Button } from './components/Button';
 
 export const App = () => {
   const [gameStatus, setGameStatus] = useState<GameStatus>(
@@ -13,7 +15,7 @@ export const App = () => {
     bombs: 10,
   });
   return (
-    <>
+    <GameContainer>
       <h1>Activate Claymore Roomba!!1</h1>
       {gameStatus === GameStatus.NOT_STARTED ? (
         <Menu
@@ -32,12 +34,18 @@ export const App = () => {
           {gameStatus === GameStatus.WON && <h4>You've won</h4>}
           {(gameStatus === GameStatus.LOST ||
             gameStatus === GameStatus.WON) && (
-            <button onClick={() => setGameStatus(GameStatus.NOT_STARTED)}>
-              Play Again
-            </button>
+            <Button onClick={() => setGameStatus(GameStatus.NOT_STARTED)}>
+              Go back to Menu
+            </Button>
           )}
         </>
       )}
-    </>
+    </GameContainer>
   );
 };
+
+const GameContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;

@@ -94,6 +94,6 @@ const BoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 3px inset #888;
+  border: 3px inset #4d535e;
   width: min-content;
 `;

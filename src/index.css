@@ -10,4 +10,9 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  background-color: #393E46;
+  color: #F7F7F7;
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: 600;
 }

@@ -11,17 +11,17 @@ export const Tile = ({ state, click, ended }: TileProps) => {
   let content = '';
   if (ended && !state.open) {
     if (state.flagged) {
-      if (state.bomb) content = 'F';
-      else content = 'x';
+      if (state.bomb) content = '🚩';
+      else content = '🚫';
     } else {
-      if (state.bomb) content = '#';
+      if (state.bomb) content = '💣';
     }
   } else {
     if (state.open) {
       if (state.proximity !== 0) content = state.proximity.toString();
-      if (state.bomb) content = '#';
+      if (state.bomb) content = '💣';
     } else {
-      if (state.flagged) content = 'F';
+      if (state.flagged) content = '🚩';
     }
   }
   return (
@@ -37,8 +37,8 @@ const TileContainer = styled.div<{ state: TileState }>`
   justify-content: center;
   height: 1.5rem;
   width: 1.5rem;
-  background-color: ${({ state }) => (state.open ? '#bdbdbd' : '#c0c0c0')};
-  border-color: ${({ state }) => (state.open ? '#888' : '#ddd')};
+  background-color: ${({ state }) => (state.open ? '#F2E7D5' : '#6D9886')};
+  border-color: ${({ state }) => (state.open ? '#c5bbab' : '#8ec5af')};
   border-width: ${({ state }) => (state.open ? '1px' : '3px')};
   border-style: ${({ state }) => (state.open ? 'solid' : 'outset')};
   cursor: ${({ state }) => (state.open ? 'default' : 'pointer')};
@@ -46,21 +46,21 @@ const TileContainer = styled.div<{ state: TileState }>`
     if (state.flagged || state.bomb) return '#f11013';
     switch (state.proximity) {
       case 1:
-        return '#14538c';
+        return '#542dde';
       case 2:
-        return '#158f8c';
+        return '#069d06';
       case 3:
-        return '#18a97d';
+        return '#e12e0c';
       case 4:
-        return '#62b91f';
+        return '#0000b3';
       case 5:
-        return '#f8b81f';
+        return '#d04900';
       case 6:
-        return '#f68c0b';
+        return '#009da0';
       case 7:
-        return '#ef5f11';
+        return '#a600a6';
       case 8:
-        return '#f8181c';
+        return '#949494';
       default:
         return '#000';
     }
