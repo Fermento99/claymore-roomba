@@ -23,6 +23,7 @@ export const Board = ({
 }: BoardProps) => {
   const [ended, setEnded] = useState(false);
   const [firstMoveMade, makeFirstMoveMade] = useState(false);
+  const [flaggedCount, setFlaggedCount] = useState(bombs);
   const [boardState, setBoardState] = useState<TileState[][]>(
     Array(height)
       .fill(0)
@@ -32,6 +33,22 @@ export const Board = ({
           .map(() => new TileState())
       )
   );
+
+  const resetState = () => {
+    setEnded(false);
+    makeFirstMoveMade(false);
+    setFlaggedCount(bombs);
+    setBoardState(
+      Array(height)
+        .fill(0)
+        .map(() =>
+          Array(width)
+            .fill(0)
+            .map(() => new TileState())
+        )
+    );
+    finishedCallback(GameStatus.STARTED);
+  };
 
   const renderRows = (board: TileState[][]): ReactNode => {
     return board.map((row, y) => (
@@ -77,32 +94,44 @@ export const Board = ({
             finishedCallback(GameStatus.WON);
           }
           setBoardState([...board]);
-        }
-      : ended
-      ? () => {}
-      : () => {
-          //TODO: refactor
-          makeFirstMoveMade(true);
-          const bombLocations = randNoRep(0, height * width, bombs, [
-            y * width + x,
-          ]).map((index) => [Math.floor(index / width), index % width]);
-          bombLocations.forEach(([y, x]) => {
-            boardState[y][x].bomb = true;
-            getNeighbours(x, y, height, width).forEach(
-              ([y, x]) => boardState[y][x].proximity++
-            );
-          });
-          openTile({ x, y }, { board: boardState, height, width });
-          setBoardState([...boardState]);
         };
 
-  return <BoardContainer>{renderRows(boardState)}</BoardContainer>;
+  return (
+    <>
+      <HeaderRow>
+        <Button onClick={() => resetState()}>Restart</Button>
+        <p>Bombs left:</p>
+        <Button disabled>
+          <strong>
+            {flaggedCount >= 0
+              ? flaggedCount.toString().padStart(2, '0')
+              : '??'}
+          </strong>
+        </Button>
+      </HeaderRow>
+      <BoardContainer>{renderRows(boardState)}</BoardContainer>
+    </>
+  );
 };
 
-const Row = styled.div`
+const BoardRow = styled.div`
   display: flex;
   flex-direction: row;
   width: min-content;
+`;
+
+const HeaderRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  > p {
+    font-size: 10px;
+  }
+
+  > p + button {
+    margin-left: 0.25em;
+  }
 `;
 
 const BoardContainer = styled.div`
