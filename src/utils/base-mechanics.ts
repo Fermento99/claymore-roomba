@@ -1,9 +1,39 @@
 import { getNeighbours } from './neighbours';
 import { TileState } from '../models/TileState';
+import { randNoRep } from './random';
+
+interface BoardState {
+  board: TileState[][];
+  height: number;
+  width: number;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+export const generateBoard = (
+  point: Point,
+  boardState: BoardState,
+  bombs: number
+): TileState[][] => {
+  const { width, height, board } = boardState;
+  const bombLocations = randNoRep(0, height * width, bombs, [
+    point.y * width + point.x,
+  ]).map((index) => [Math.floor(index / width), index % width]);
+  bombLocations.forEach(([y, x]) => {
+    board[y][x].bomb = true;
+    getNeighbours(x, y, height, width).forEach(
+      ([y, x]) => board[y][x].proximity++
+    );
+  });
+  return board;
+};
 
 export const openTile = (
-  point: { x: number; y: number },
-  boardState: { board: TileState[][]; height: number; width: number }
+  point: Point,
+  boardState: BoardState
 ): TileState[][] => {
   const { x, y } = point;
   const { board, width, height } = boardState;
@@ -17,10 +47,7 @@ export const openTile = (
   return board;
 };
 
-export const checkLost = (
-  point: { x: number; y: number },
-  board: TileState[][]
-): boolean => {
+export const checkLost = (point: Point, board: TileState[][]): boolean => {
   return board[point.y][point.x].bomb;
 };
 

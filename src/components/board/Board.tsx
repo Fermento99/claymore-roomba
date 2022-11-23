@@ -2,11 +2,15 @@ import { ReactNode, useState } from 'react';
 import styled from '@emotion/styled';
 import { Tile } from './components/Tile';
 import { TileState } from '../../models/TileState';
-import { randNoRep } from '../../utils/random';
-import { getNeighbours } from '../../utils/neighbours';
 import { GameConfig } from '../../models/GameConfig';
 import { GameStatus } from '../../models/GameStatus';
-import { checkLost, checkWon, openTile } from '../../utils/base-mechanics';
+import {
+  checkLost,
+  checkWon,
+  generateBoard,
+  openTile,
+} from '../../utils/base-mechanics';
+import { Button } from '../Button';
 
 interface BoardProps {
   gameConfig: GameConfig;
@@ -31,7 +35,7 @@ export const Board = ({
 
   const renderRows = (board: TileState[][]): ReactNode => {
     return board.map((row, y) => (
-      <Row key={y}>
+      <BoardRow key={y}>
         {row.map((state, x) => (
           <Tile
             ended={ended}
@@ -40,16 +44,27 @@ export const Board = ({
             key={x + '-' + y}
           />
         ))}
-      </Row>
+      </BoardRow>
     ));
   };
 
   const callback = (x: number, y: number) =>
-    firstMoveMade
-      ? (alt: boolean) => {
+    !firstMoveMade
+      ? () => {
+          makeFirstMoveMade(true);
           let board = boardState;
-          if (alt) board[y][x].toggleFlag();
-          else {
+          board = generateBoard({ x, y }, { board, height, width }, bombs);
+          board = openTile({ x, y }, { board, height, width });
+          setBoardState([...board]);
+        }
+      : ended
+      ? () => {}
+      : (alt: boolean) => {
+          let board = boardState;
+          if (alt) {
+            const change = board[y][x].toggleFlag();
+            setFlaggedCount(flaggedCount - change);
+          } else {
             if (checkLost({ x, y }, boardState)) {
               setEnded(true);
               finishedCallback(GameStatus.LOST);
