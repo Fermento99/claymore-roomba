@@ -1,17 +1,8 @@
 import { getNeighbours } from './neighbours';
 import { TileState } from '../models/TileState';
 import { randNoRep } from './random';
-
-interface BoardState {
-  board: TileState[][];
-  height: number;
-  width: number;
-}
-
-interface Point {
-  x: number;
-  y: number;
-}
+import { Point } from '../models/Point';
+import { BoardState } from '../models/BoardState';
 
 export const generateBoard = (
   point: Point,
@@ -21,13 +12,14 @@ export const generateBoard = (
   const { width, height, board } = boardState;
   const bombLocations = randNoRep(0, height * width, bombs, [
     point.y * width + point.x,
-  ]).map((index) => [Math.floor(index / width), index % width]);
-  bombLocations.forEach(([y, x]) => {
+  ]).map((index) => ({ y: Math.floor(index / width), x: index % width }));
+  bombLocations.forEach(({ y, x }) => {
     board[y][x].bomb = true;
-    getNeighbours(x, y, height, width).forEach(
-      ([y, x]) => board[y][x].proximity++
+    getNeighbours({ x, y }, height, width).forEach(
+      ({ y, x }) => board[y][x].proximity++
     );
   });
+  console.log('board3');
   return board;
 };
 
@@ -39,7 +31,7 @@ export const openTile = (
   const { board, width, height } = boardState;
   board[y][x].setOpen();
   if (board[y][x].proximity === 0) {
-    getNeighbours(x, y, height, width).forEach(([y, x]) => {
+    getNeighbours({ x, y }, height, width).forEach(({ y, x }) => {
       if (!board[y][x].open)
         return openTile({ x, y }, { board, height, width });
     });

@@ -9,8 +9,9 @@ import {
   checkWon,
   generateBoard,
   openTile,
-} from '../../utils/base-mechanics';
+} from '../../utils/mechanics';
 import { Button } from '../Button';
+import { autoLoop } from '../../utils/helpers';
 
 interface BoardProps {
   gameConfig: GameConfig;
@@ -72,6 +73,8 @@ export const Board = ({
           let board = boardState;
           board = generateBoard({ x, y }, { board, height, width }, bombs);
           board = openTile({ x, y }, { board, height, width });
+          const change = autoLoop({ board, width, height });
+          setFlaggedCount(flaggedCount - change);
           setBoardState([...board]);
         }
       : ended
@@ -93,6 +96,8 @@ export const Board = ({
             setEnded(true);
             finishedCallback(GameStatus.WON);
           }
+          const change = autoLoop({ board, width, height });
+          setFlaggedCount(flaggedCount - change);
           setBoardState([...board]);
         };
 
