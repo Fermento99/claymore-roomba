@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/claymore-roomba/static/css/main.721f2dd0.css",
-    "main.js": "/claymore-roomba/static/js/main.b21f7845.js",
+    "main.js": "/claymore-roomba/static/js/main.ba61cec3.js",
     "index.html": "/claymore-roomba/index.html",
     "main.721f2dd0.css.map": "/claymore-roomba/static/css/main.721f2dd0.css.map",
-    "main.b21f7845.js.map": "/claymore-roomba/static/js/main.b21f7845.js.map"
+    "main.ba61cec3.js.map": "/claymore-roomba/static/js/main.ba61cec3.js.map"
   },
   "entrypoints": [
     "static/css/main.721f2dd0.css",
-    "static/js/main.b21f7845.js"
+    "static/js/main.ba61cec3.js"
   ]
 }
