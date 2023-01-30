@@ -1,52 +1,33 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { Tile } from './components/Tile';
 import { TileState } from '../../models/TileState';
 import { GameConfig } from '../../models/GameConfig';
 import { GameStatus } from '../../models/GameStatus';
-import {
-  checkLost,
-  checkWon,
-  generateBoard,
-  openTile,
-} from '../../utils/base-mechanics';
 import { Button } from '../Button';
+import { GameState } from '../../models/GameState';
+import { Point } from '../../models/Point';
 
 interface BoardProps {
   gameConfig: GameConfig;
   finishedCallback: (result: GameStatus) => void;
 }
 
-export const Board = ({
-  gameConfig: { width, height, bombs },
-  finishedCallback,
-}: BoardProps) => {
+export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
+  const gameState = useMemo(() => new GameState(gameConfig), [gameConfig]);
   const [ended, setEnded] = useState(false);
   const [firstMoveMade, makeFirstMoveMade] = useState(false);
-  const [flaggedCount, setFlaggedCount] = useState(bombs);
+  const [flaggedCount, setFlaggedCount] = useState(gameConfig.bombs);
   const [boardState, setBoardState] = useState<TileState[][]>(
-    Array(height)
-      .fill(0)
-      .map(() =>
-        Array(width)
-          .fill(0)
-          .map(() => new TileState())
-      )
+    gameState.copyBoardState()
   );
 
   const resetState = () => {
     setEnded(false);
     makeFirstMoveMade(false);
-    setFlaggedCount(bombs);
-    setBoardState(
-      Array(height)
-        .fill(0)
-        .map(() =>
-          Array(width)
-            .fill(0)
-            .map(() => new TileState())
-        )
-    );
+    gameState.resetGameState();
+    setBoardState(gameState.copyBoardState());
+    setFlaggedCount(gameConfig.bombs);
     finishedCallback(GameStatus.STARTED);
   };
 
@@ -57,7 +38,7 @@ export const Board = ({
           <Tile
             ended={ended}
             state={state}
-            click={callback(x, y)}
+            click={callback({ x, y })}
             key={x + '-' + y}
           />
         ))}
@@ -65,35 +46,35 @@ export const Board = ({
     ));
   };
 
-  const callback = (x: number, y: number) =>
+  const callback = (point: Point) =>
     !firstMoveMade
       ? () => {
           makeFirstMoveMade(true);
-          let board = boardState;
-          board = generateBoard({ x, y }, { board, height, width }, bombs);
-          board = openTile({ x, y }, { board, height, width });
-          setBoardState([...board]);
+          gameState.generateBombs(point);
+          gameState.openTile(point);
+          setBoardState(gameState.copyBoardState());
         }
       : ended
       ? () => {}
       : (alt: boolean) => {
-          let board = boardState;
           if (alt) {
-            const change = board[y][x].toggleFlag();
-            setFlaggedCount(flaggedCount - change);
+            gameState.flagTile(point);
+
+            setFlaggedCount(gameState.getRemainingBombCount());
           } else {
-            if (checkLost({ x, y }, boardState)) {
+            if (gameState.checkLost(point)) {
               setEnded(true);
               finishedCallback(GameStatus.LOST);
             } else {
-              board = openTile({ x, y }, { board, height, width });
+              gameState.openTile(point);
             }
           }
-          if (checkWon({ board, bombs })) {
+          if (gameState.checkWon()) {
             setEnded(true);
             finishedCallback(GameStatus.WON);
           }
-          setBoardState([...board]);
+          setFlaggedCount(gameState.getRemainingBombCount());
+          setBoardState(gameState.copyBoardState());
         };
 
   return (
