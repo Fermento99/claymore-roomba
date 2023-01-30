@@ -7,6 +7,7 @@ import { GameStatus } from '../../models/GameStatus';
 import { Button } from '../Button';
 import { GameState } from '../../models/GameState';
 import { Point } from '../../models/Point';
+import { autoLoop } from '../../utils/helpers';
 
 interface BoardProps {
   gameConfig: GameConfig;
@@ -52,6 +53,8 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
           makeFirstMoveMade(true);
           gameState.generateBombs(point);
           gameState.openTile(point);
+          autoLoop(gameState);
+          setFlaggedCount(gameState.getRemainingBombCount());
           setBoardState(gameState.copyBoardState());
         }
       : ended
@@ -59,7 +62,13 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
       : (alt: boolean) => {
           if (alt) {
             gameState.flagTile(point);
-
+            try {
+              autoLoop(gameState);
+            } catch (e) {
+              console.error(e);
+              setEnded(true);
+              finishedCallback(GameStatus.LOST);
+            }
             setFlaggedCount(gameState.getRemainingBombCount());
           } else {
             if (gameState.checkLost(point)) {
@@ -67,6 +76,13 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
               finishedCallback(GameStatus.LOST);
             } else {
               gameState.openTile(point);
+              try {
+                autoLoop(gameState);
+              } catch (e) {
+                console.error(e);
+                setEnded(true);
+                finishedCallback(GameStatus.LOST);
+              }
             }
           }
           if (gameState.checkWon()) {
