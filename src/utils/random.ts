@@ -1,3 +1,11 @@
+/**
+ * Function used for generating arrays of not repeating numbers from given interval
+ * @param start - start of the interval
+ * @param end - end of the interval
+ * @param count - requested size of returned array
+ * @param illegal - array of numbers that cannot be in result array
+ * @returns array of random numbers
+ */
 export const randNoRep = (
   start: number,
   end: number,
@@ -17,10 +25,11 @@ export const randNoRep = (
     if (!illegal.includes(i)) all.push(i);
   }
 
-  while (out.length < count) {
+  while (out.length < count && all.length > 0) {
     const index = Math.floor(Math.random() * all.length);
     out.push(all[index]);
     all.splice(index, 1);
   }
+
   return out;
 };
