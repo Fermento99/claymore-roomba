@@ -7,7 +7,7 @@ import { GameStatus } from '../../models/GameStatus';
 import { Button } from '../Button';
 import { GameState } from '../../models/GameState';
 import { Point } from '../../models/Point';
-import { autoLoop } from '../../utils/helpers';
+import { autoLoop, autoOpen } from '../../utils/helpers';
 
 interface BoardProps {
   gameConfig: GameConfig;
@@ -18,6 +18,7 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
   const gameState = useMemo(() => new GameState(gameConfig), [gameConfig]);
   const [ended, setEnded] = useState(false);
   const [firstMoveMade, makeFirstMoveMade] = useState(false);
+  const [autoLoopMode, setAutoLoopMode] = useState(false);
   const [flaggedCount, setFlaggedCount] = useState(gameConfig.bombs);
   const [boardState, setBoardState] = useState<TileState[][]>(
     gameState.copyBoardState()
@@ -32,8 +33,8 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
     finishedCallback(GameStatus.STARTED);
   };
 
-  const renderRows = (board: TileState[][]): ReactNode => {
-    return board.map((row, y) => (
+  const renderRows = (board: TileState[][]): ReactNode =>
+    board.map((row, y) => (
       <BoardRow key={y}>
         {row.map((state, x) => (
           <Tile
@@ -45,7 +46,6 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
         ))}
       </BoardRow>
     ));
-  };
 
   const callback = (point: Point) =>
     !firstMoveMade
@@ -53,8 +53,10 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
           makeFirstMoveMade(true);
           gameState.generateBombs(point);
           gameState.openTile(point);
-          autoLoop(gameState);
-          setFlaggedCount(gameState.getRemainingBombCount());
+          if (autoLoopMode) {
+            autoLoop(gameState);
+            setFlaggedCount(gameState.getRemainingBombCount());
+          }
           setBoardState(gameState.copyBoardState());
         }
       : ended
@@ -62,26 +64,30 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
       : (alt: boolean) => {
           if (alt) {
             gameState.flagTile(point);
-            try {
-              autoLoop(gameState);
-            } catch (e) {
-              console.error(e);
-              setEnded(true);
-              finishedCallback(GameStatus.LOST);
-            }
-            setFlaggedCount(gameState.getRemainingBombCount());
-          } else {
-            if (gameState.checkLost(point)) {
-              setEnded(true);
-              finishedCallback(GameStatus.LOST);
-            } else {
-              gameState.openTile(point);
+            if (autoLoopMode) {
               try {
                 autoLoop(gameState);
               } catch (e) {
                 console.error(e);
                 setEnded(true);
                 finishedCallback(GameStatus.LOST);
+              }
+              setFlaggedCount(gameState.getRemainingBombCount());
+            }
+          } else {
+            if (gameState.checkLost(point)) {
+              setEnded(true);
+              finishedCallback(GameStatus.LOST);
+            } else {
+              gameState.openTile(point);
+              if (autoLoopMode) {
+                try {
+                  autoLoop(gameState);
+                } catch (e) {
+                  console.error(e);
+                  setEnded(true);
+                  finishedCallback(GameStatus.LOST);
+                }
               }
             }
           }
@@ -93,10 +99,25 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
           setBoardState(gameState.copyBoardState());
         };
 
+  const runAutoOnce = () => {
+    try {
+      autoOpen(gameState);
+    } catch (e) {
+      console.error(e);
+      setEnded(true);
+      finishedCallback(GameStatus.LOST);
+    }
+    setFlaggedCount(gameState.getRemainingBombCount());
+    setBoardState(gameState.copyBoardState());
+    if (gameState.checkWon()) {
+      setEnded(true);
+      finishedCallback(GameStatus.WON);
+    }
+  };
+
   return (
     <>
-      <HeaderRow>
-        <Button onClick={() => resetState()}>Restart</Button>
+      <ButtonRow>
         <p>Bombs left:</p>
         <Button disabled>
           <strong>
@@ -105,8 +126,23 @@ export const Board = ({ gameConfig, finishedCallback }: BoardProps) => {
               : '??'}
           </strong>
         </Button>
-      </HeaderRow>
+      </ButtonRow>
+      <ButtonRow>
+        <Button
+          active={autoLoopMode}
+          onClick={() => setAutoLoopMode(!autoLoopMode)}
+        >
+          auto loop: {autoLoopMode ? 'on' : 'off'}
+        </Button>
+        <Button onClick={() => runAutoOnce()}>run auto once</Button>
+      </ButtonRow>
       <BoardContainer>{renderRows(boardState)}</BoardContainer>
+      <ButtonRow>
+        <Button onClick={() => resetState()}>Restart</Button>
+        <Button onClick={() => finishedCallback(GameStatus.NOT_STARTED)}>
+          Main Menu
+        </Button>
+      </ButtonRow>
     </>
   );
 };
@@ -117,7 +153,7 @@ const BoardRow = styled.div`
   width: min-content;
 `;
 
-const HeaderRow = styled.div`
+const ButtonRow = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -137,4 +173,5 @@ const BoardContainer = styled.div`
   align-items: center;
   border: 3px inset #4d535e;
   width: min-content;
+  margin: 1em 0;
 `;

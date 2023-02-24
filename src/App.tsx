@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { GameStatus } from './models/GameStatus';
 import { GameConfig } from './models/GameConfig';
 import styled from '@emotion/styled';
-import { Button } from './components/Button';
 
 export const App = () => {
   const [gameStatus, setGameStatus] = useState<GameStatus>(
@@ -32,12 +31,6 @@ export const App = () => {
           />
           {gameStatus === GameStatus.LOST && <h4>You've lost</h4>}
           {gameStatus === GameStatus.WON && <h4>You've won</h4>}
-          {(gameStatus === GameStatus.LOST ||
-            gameStatus === GameStatus.WON) && (
-            <Button onClick={() => setGameStatus(GameStatus.NOT_STARTED)}>
-              Go back to Menu
-            </Button>
-          )}
         </>
       )}
     </GameContainer>

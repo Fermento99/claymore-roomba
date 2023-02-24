@@ -1,7 +1,7 @@
 import { GameState } from '../models/GameState';
 import { Point } from '../models/Point';
 
-const autoOpen = (gameState: GameState): boolean => {
+export const autoOpen = (gameState: GameState): boolean => {
   let changed = false;
   for (let x = 0; x < gameState.width; x++) {
     for (let y = 0; y < gameState.height; y++) {
